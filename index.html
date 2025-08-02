@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smash or Pass</title>
+  </head>
+  <body>
+    <navbar class="stats">
+      <div class="inline" onclick="showSmashHistory()">
+        <bold class="smashed">Smashed:</bold>
+        <p id="smashed-amount">0</p>
+      </div>
+      <div class="hide history" id="smashHistoryContainer">
+        <h1 class="pointer" onclick="showSmashHistory()">Smash History</h1>
+        <div class="smallerHistory" id="smashHistory"></div>
+      </div>
+      <div class="inline" onclick="showPassHistory()">
+        <bold class="passed">Passed:</bold>
+        <p id="passed-amount">0</p>
+      </div>
+      <div class="hide history" id="passHistoryContainer">
+        <h1 class="pointer" onclick="showPassHistory()">Pass History</h1>
+        <div class="smallerHistory" id="passHistory"></div>
+      </div>
+      <div class="hide" id="passHistory"></div>
+    </navbar>
+    <div id="app">
+      <img id="character-image" />
+      <h1 id="character-name"></h1>
+      <div>
+        <button id="smash" class="smash hide">SMASH</button>
+        <button id="pass" class="pass hide">PASS</button>
+      </div>
+      <input id="username" placeholder="anilist username" />
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
