@@ -37,8 +37,8 @@ export class ApiConnector {
   characterCache: CacheElement[] = [];
   private currentCharacter?: CacheElement;
 
-  constructor(private username: string, options?: QueryOptions) {
-    this.getData(options);
+  constructor(username: string, options?: QueryOptions) {
+    this.getData(username, options);
   }
 
   public waitTillReady(): Promise<void> {
@@ -49,7 +49,7 @@ export class ApiConnector {
     });
   }
 
-  private async getData(options?: QueryOptions) {
+  private async getData(username: string, options?: QueryOptions) {
     const query = `query ExampleQuery($userName: String, $type: MediaType, $sort: [CharacterSort], $role: CharacterRole) {
   MediaListCollection(userName: $userName, type: $type) {
     lists {
@@ -89,7 +89,7 @@ export class ApiConnector {
 }
 `;
     const variables = {
-      userName: this.username,
+      userName: username,
       type: "ANIME",
       sort: "RELEVANCE",
       role: options?.role !== "ALL" ? options?.role : undefined,
