@@ -49,6 +49,7 @@ export interface CacheElement {
 export class ApiConnector {
   characterCache: CacheElement[] = [];
   private currentCharacter?: CacheElement;
+  public originalAmount = 0;
 
   constructor(username: string, options?: QueryOptions) {
     this.getData(username, options);
@@ -162,18 +163,15 @@ export class ApiConnector {
     }
 
     // removing duplicate characters by their id
-    characters = characters.filter((char, index) => {
-      characters.forEach((otherChar) => {
-        if (
-          char.character.id === otherChar.character.id &&
-          index !== characters.indexOf(otherChar)
-        ) {
-          return false;
-        }
-      });
+    const seenIds = new Set();
+    characters = characters.filter(({ character }) => {
+      if (seenIds.has(character.id)) return false;
+
+      seenIds.add(character.id);
       return true;
     });
 
+    this.originalAmount = characters.length;
     this.characterCache = characters;
   }
 

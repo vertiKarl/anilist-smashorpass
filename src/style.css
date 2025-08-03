@@ -191,6 +191,10 @@ a.tag {
   flex-direction: column;
 }
 
+ul {
+  list-style-type: none;
+}
+
 .smallerOverlay > * {
   display: flex;
 }

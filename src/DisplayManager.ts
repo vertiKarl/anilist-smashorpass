@@ -201,6 +201,13 @@ export class DisplayManager {
     historyEntry.append(historyEntryImg, historyEntryText);
     content.historyElement.append(historyEntry);
 
+    console.log(
+      this.history.pass.characters.length +
+        this.history.smash.characters.length +
+        "/" +
+        this.connector.originalAmount
+    );
+
     this.connector.pickNewCharacter();
 
     content.amountElement.innerHTML = content.characters.length.toString();
