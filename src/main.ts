@@ -38,7 +38,7 @@ window.onload = () => {
     (window as any).showShareMenu = () => {
       const smashAvgAge = dm.getAverageAge("smash");
       const passAvgAge = dm.getAverageAge("pass");
-      const totalAvgAge = (smashAvgAge + passAvgAge) / 2;
+      //const totalAvgAge = (smashAvgAge + passAvgAge) / 2; not used yet
 
       const smashAmount = document.querySelector(
         "#statSmashAmount"
