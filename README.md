@@ -3,8 +3,8 @@
 I didn't find any good websites allowing you to:
 
 - use your own animelist
-- allows sharing your results
-- allows filtering by role
+- share your results
+- filter by role
 - and much more
 
 ... so I just made my own!
