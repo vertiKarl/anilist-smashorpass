@@ -14,7 +14,7 @@ export class DisplayManager {
   private history: Record<InteractionType, InteractionContent>;
   private connector: ApiConnector;
 
-  constructor(private username: string, private options?: QueryOptions) {
+  constructor(username: string, options?: QueryOptions) {
     this.connector = new ApiConnector(username, options);
 
     this.history = {

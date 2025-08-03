@@ -37,7 +37,7 @@ export class ApiConnector {
   characterCache: CacheElement[] = [];
   private currentCharacter?: CacheElement;
 
-  constructor(private username: string, private options?: QueryOptions) {
+  constructor(private username: string, options?: QueryOptions) {
     this.getData(options);
   }
 
