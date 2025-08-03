@@ -12,27 +12,71 @@
         <bold class="smashed">Smashed:</bold>
         <p id="smashedAmount">0</p>
       </div>
-      <div class="hide history" id="smashHistoryContainer">
+      <div class="hide overlay" id="smashHistoryContainer">
         <h1 class="pointer" onclick="showSmashHistory()">Smash History</h1>
-        <div class="smallerHistory" id="smashHistory"></div>
+        <div class="smallerOverlay" id="smashHistory"></div>
       </div>
       <div class="inline" onclick="showPassHistory()">
         <bold class="passed">Passed:</bold>
         <p id="passedAmount">0</p>
       </div>
-      <div class="hide history" id="passHistoryContainer">
+      <div class="hide overlay" id="passHistoryContainer">
         <h1 class="pointer" onclick="showPassHistory()">Pass History</h1>
-        <div class="smallerHistory" id="passHistory"></div>
+        <div class="smallerOverlay" id="passHistory"></div>
+      </div>
+      <div class="inline" onclick="showShareMenu()">
+        <p class="share">Share</p>
+      </div>
+      <div class="hide overlay" id="shareContainer">
+        <h1 class="pointer" onclick="showShareMenu()">Share</h1>
+        <div class="smallerOverlay">
+          <div class="statOverlay">
+            <span>
+              <h1>Smashed:</h1>
+              <span class="statEntry">
+                <p>Amount:</p>
+                <p id="statSmashAmount"></p>
+              </span>
+              <span class="statEntry">
+                <p>Average age:</p>
+                <p id="statSmashAge"></p
+              ></span>
+            </span>
+            <span>
+              <h1>Passed:</h1>
+              <span class="statEntry">
+                <p>Amount:</p>
+                <p id="statPassAmount"></p>
+              </span>
+              <span class="statEntry">
+                <p>Average age:</p>
+                <p id="statPassAge"></p
+              ></span>
+            </span>
+            <button onclick="share()">Generate URL</button>
+          </div>
+        </div>
       </div>
       <div class="hide" id="passHistory"></div>
     </navbar>
     <div id="app">
       <span id="loader" class="loader hide"></span>
-      <img id="character-image" />
-      <h1 id="character-name"></h1>
-      <div>
-        <button id="smash" class="smash hide">SMASH</button>
-        <button id="pass" class="pass hide">PASS</button>
+      <div id="character-card" class="character-card hide">
+        <img id="character-image" />
+        <div class="character-info">
+          <div class="character-main-info">
+            <span id="character-age"></span>
+            <span id="character-name"></span>
+          </div>
+          <div class="tags">
+            <a class="tag hide" id="character-anime"></a>
+            <p class="tag" id="character-list"></p>
+          </div>
+        </div>
+      </div>
+      <div class="interactions">
+        <button id="smash" class="smash interaction hide">SMASH</button>
+        <button id="pass" class="pass interaction hide">PASS</button>
       </div>
       <form id="configForm">
         <select name="role">
@@ -43,6 +87,20 @@
         </select>
         <input name="gender" placeholder="gender" />
         <input name="username" placeholder="anilist username" />
+        <input
+          name="minAge"
+          placeholder="min-age"
+          type="number"
+          min="0"
+          max="10000000"
+        />
+        <input
+          name="maxAge"
+          placeholder="max-age"
+          type="number"
+          min="0"
+          max="10000000"
+        />
         <button class="hide" type="submit"></button>
       </form>
     </div>

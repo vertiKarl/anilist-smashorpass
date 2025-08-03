@@ -5,6 +5,8 @@ export type Role = "MAIN" | "SUPPORTING" | "BACKGROUND" | "ALL";
 export interface QueryOptions {
   role: Role;
   gender: string;
+  minAge: string;
+  maxAge: string;
 }
 
 export interface ResponseData {
@@ -15,22 +17,33 @@ export interface ResponseData {
 
 export interface ListEntry {
   entries: MediaEntry[];
+  name: string;
+  status?:
+    | "CURRENT"
+    | "PLANNING"
+    | "COMPLETED"
+    | "DROPPED"
+    | "PAUSED"
+    | "REPEATING";
 }
 
 export interface MediaEntry {
   media: {
     title: {
       english: string;
+      native: string;
     };
     characters: {
       nodes: Character[];
     };
+    siteUrl: string;
   };
 }
 
 export interface CacheElement {
   character: Character;
   anime: MediaEntry;
+  list: ListEntry;
 }
 
 export class ApiConnector {
@@ -57,6 +70,7 @@ export class ApiConnector {
         media {
           title {
             english
+            native
           }
           characters(sort: $sort, role: $role) {
             nodes {
@@ -81,9 +95,11 @@ export class ApiConnector {
               siteUrl
             }
           }
+          siteUrl
         }
       }
       name
+      status
     }
   }
 }
@@ -112,36 +128,46 @@ export class ApiConnector {
   }
 
   private generateCharacterList(data: ResponseData, options?: QueryOptions) {
-    let anime: MediaEntry[] = [];
+    let characters: CacheElement[] = [];
     data.MediaListCollection.lists.forEach((list) => {
-      anime = anime.concat(list.entries);
-    });
-
-    let characters: any[] = [];
-    anime.forEach((entry) => {
-      entry.media.characters.nodes.forEach((char) => {
-        characters.push({
-          anime: entry.media.title.english,
-          character: char,
+      list.entries.forEach((entry) => {
+        entry.media.characters.nodes.forEach((char) => {
+          characters.push({
+            anime: entry,
+            character: char,
+            list,
+          });
         });
       });
     });
 
     if (options) {
       characters = characters.filter((obj) => {
-        if (obj.character.gender === options.gender) {
+        // include characters first appearance age (e.g. Sinon 16-17)
+        const age = Number(obj.character.age?.split("-")[0]);
+        const minAge = Number(options.minAge);
+        const maxAge = Number(options.maxAge);
+        if (
+          // if no gender is specified pass, otherwise filter
+          (!options.gender ||
+            (options.gender && obj.character.gender === options.gender)) &&
+          // if no minAge is specified, it isn't a number or the character doesn't have an age pass, otherwise filter
+          (!minAge || (minAge && age && age >= minAge)) &&
+          // if no maxAge is specified, it isn't a number or the character doesn't have an age pass, otherwise filter
+          (!maxAge || (maxAge && age && age <= maxAge))
+        ) {
           return obj;
         }
       });
     }
 
+    // removing duplicate characters by their id
     characters = characters.filter((char, index) => {
       characters.forEach((otherChar) => {
         if (
-          char.character.id === otherChar.id &&
+          char.character.id === otherChar.character.id &&
           index !== characters.indexOf(otherChar)
         ) {
-          console.log("DUPLICATE FILTERED");
           return false;
         }
       });
@@ -153,20 +179,45 @@ export class ApiConnector {
 
   public pickNewCharacter() {
     const index = Math.floor(Math.random() * this.characterCache.length);
-    const { character, anime } = this.characterCache.splice(index, 1)[0];
+    const cacheItem = this.characterCache.splice(index, 1)?.[0];
+    if (!cacheItem) {
+      console.log("No more characters!");
+      return;
+    }
+
+    const { character, anime, list } = cacheItem;
 
     const img = document.querySelector("#character-image") as HTMLImageElement;
     const name = document.querySelector(
       "#character-name"
     ) as HTMLHeadingElement;
+    const age = document.querySelector("#character-age") as HTMLHeadingElement;
+    const animeElement = document.querySelector(
+      "#character-anime"
+    ) as HTMLAnchorElement;
+    const listElement = document.querySelector(
+      "#character-list"
+    ) as HTMLParagraphElement;
 
-    if (!img || !name) return;
+    if (!img || !name || !age || !animeElement || !listElement) {
+      throw new Error("HTML Element went missing...");
+    }
 
     img.src = character.image.large;
-    name.innerHTML = character.name.full + (anime ? ` (${anime})` : "");
+    name.innerHTML = character.name.full;
+    age.innerHTML = character.age || "?";
+    animeElement.innerHTML =
+      anime.media.title.english || anime.media.title.native;
+    if (anime) {
+      animeElement.href = anime.media.siteUrl;
+      animeElement.classList.remove("hide");
+    } else {
+      animeElement.classList.add("hide");
+    }
 
-    console.log(character, anime);
-    this.currentCharacter = { character, anime };
+    listElement.innerText = list.name;
+
+    this.currentCharacter = { character, anime, list };
   }
 
   public getCurrentCharacter() {

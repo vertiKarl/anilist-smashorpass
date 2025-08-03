@@ -21,9 +21,21 @@
   background-color: red !important;
 }
 
+.interactions {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2rem;
+  box-sizing: border-box;
+}
+
+.interaction {
+  width: 45%;
+}
+
 .hide {
-  width: 0;
-  height: 0;
+  width: 0 !important;
+  height: 0 !important;
   visibility: hidden;
 }
 
@@ -53,8 +65,9 @@
   transform: scale(105%);
 }
 
-.history {
+.overlay {
   position: absolute;
+  z-index: 1;
   height: 100vh;
   width: 100vw;
   padding: 0;
@@ -67,7 +80,7 @@
   align-items: center;
 }
 
-.history > h1 {
+.overlay > h1 {
   margin-left: 1rem;
   width: 30vw;
 }
@@ -92,19 +105,101 @@
   }
 }
 
+.character-card {
+  border-radius: 2rem;
+  overflow: hidden;
+  width: 40vw;
+  height: 60vh;
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.character-card > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.character-info {
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(1rem);
+  position: absolute;
+  bottom: 0;
+  height: 5rem;
+  margin: 0;
+  padding: 0 0.5rem;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  width: 100%;
+}
+
+.character-main-info {
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+#character-age {
+  font-weight: bold;
+  font-size: xx-large;
+}
+
+#character-name {
+  font-size: x-large;
+}
+
+.tags {
+  display: flex;
+  flex-direction: row;
+}
+
+.tag {
+  display: block;
+  text-align: center;
+  line-height: 1rem;
+
+  border-radius: 2rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(1rem);
+  padding: 0.5rem 1rem;
+  box-sizing: border-box;
+  height: 2rem;
+  max-width: 40%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  margin: 0;
+  margin-right: 0.2rem;
+}
+
+a.tag {
+  color: white;
+}
+
 .pointer {
   cursor: pointer;
 }
 
-.smallerHistory > * {
+.statEntry {
+  display: ruby !important;
+}
+
+.statOverlay {
+  display: flex;
+  flex-direction: column;
+}
+
+.smallerOverlay > * {
   display: flex;
 }
 
-.smallerHistory > * > img {
+.smallerOverlay > * > img {
   height: 80px;
 }
 
-.smallerHistory {
+.smallerOverlay {
   width: 70vw;
   height: 70vh;
   overflow: scroll;
