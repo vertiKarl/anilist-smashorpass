@@ -3,6 +3,7 @@ import {
   type CacheElement,
   type QueryOptions,
 } from "./api_connector";
+import { getDateString, getNumbersAtStartOfString } from "./util";
 
 export type InteractionType = "smash" | "pass";
 
@@ -24,7 +25,7 @@ export class DisplayManager {
   private history: Record<InteractionType, InteractionContent>;
   private connector: ApiConnector;
   private currentCharacter: CacheElement | null = null;
-  private interactionDisabled = true;
+  private interactionEnabled = false;
 
   constructor(username: string, options?: QueryOptions) {
     this.connector = new ApiConnector(username, options);
@@ -58,26 +59,64 @@ export class DisplayManager {
     loader.classList.remove("hide");
 
     this.connector.waitTillReady().then(() => {
+      DEBUG: console.log("[dm-connector] ready");
+      this.setupAnimations();
       const char = this.connector.pickNewCharacter();
       this.presentCharacter(char || undefined);
 
       loader.classList.add("hide");
       this.history.smash.buttonElement.classList.remove("hide");
       this.history.smash.buttonElement.onclick = () => {
-        if (!this.interactionDisabled)
-          this.handleInteraction(this.history.smash);
+        if (this.interactionEnabled) this.handleInteraction(this.history.smash);
       };
       this.history.pass.buttonElement.classList.remove("hide");
       this.history.pass.buttonElement.onclick = () => {
-        if (!this.interactionDisabled)
-          this.handleInteraction(this.history.pass);
+        if (this.interactionEnabled) this.handleInteraction(this.history.pass);
       };
 
       const characterCard = document.querySelector(
         "#character-card"
       ) as HTMLDivElement;
       characterCard.classList.remove("hide");
-      this.interactionDisabled = false;
+      this.interactionEnabled = true;
+    });
+  }
+
+  private setupAnimations() {
+    const card = document.querySelector("#character-card") as HTMLDivElement;
+    card.onclick = () => {
+      if (this.interactionEnabled) card.classList.toggle("flipped");
+    };
+
+    let reset = true;
+    window.addEventListener("mousemove", (e) => {
+      if (card.classList.contains("flipped") || !this.interactionEnabled) {
+        if (!reset) {
+          card.style.setProperty("--rotateX", `0deg`);
+          card.style.setProperty("--rotateY", `0deg`);
+        }
+        return;
+      }
+
+      reset = false;
+      const rect = card.getBoundingClientRect();
+
+      // Center of the div
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      // Calculate offset from center (-1 to 1)
+      const offsetX = (e.clientX - centerX) / (rect.width / 2);
+      const offsetY = (centerY - e.clientY) / (rect.height / 2); // invert Y for intuitive tilt
+
+      // Maximum rotation angle in degrees
+      const maxRotation = 0.6;
+
+      const rotateX = offsetY * maxRotation;
+      const rotateY = offsetX * maxRotation;
+
+      card.style.setProperty("--rotateX", `${rotateX}deg`);
+      card.style.setProperty("--rotateY", `${rotateY}deg`);
     });
   }
 
@@ -86,10 +125,18 @@ export class DisplayManager {
    * @param bool true to enable interaction elements
    */
   private changeInteractionEnabled(bool: boolean) {
-    this.interactionDisabled = bool;
+    DEBUG: console.log("[dm-changeInteractionEnabled]", bool);
+    // need to invert bool so it grammatically makes sense
+    this.interactionEnabled = bool;
 
-    this.history.pass.buttonElement.setAttribute("disabled", `${bool}`);
-    this.history.smash.buttonElement.setAttribute("disabled", `${bool}`);
+    // set both buttons to the correct state
+    [this.history.pass.buttonElement, this.history.smash.buttonElement].forEach(
+      (button) => {
+        bool
+          ? button.removeAttribute("disabled")
+          : button.setAttribute("disabled", "");
+      }
+    );
   }
 
   getAverageAge(type: InteractionType) {
@@ -200,6 +247,7 @@ export class DisplayManager {
   }
 
   presentCharacter(char?: CacheElement) {
+    DEBUG: console.log("[dm-presentCharacter]", char);
     this.currentCharacter = char || null;
     const img = document.querySelector("#character-image") as HTMLImageElement;
     const name = document.querySelector(
@@ -210,35 +258,120 @@ export class DisplayManager {
       "#character-anime"
     ) as HTMLAnchorElement;
     const listElement = document.querySelector(
-      "#character-list"
+      "#detailed-list"
     ) as HTMLParagraphElement;
 
-    if (!img || !name || !age || !animeElement || !listElement) {
+    const favoriteContainerElement = document.querySelector(
+      "#character-favorites-container"
+    ) as HTMLParagraphElement;
+
+    const favoriteElement = document.querySelector(
+      "#character-favorites"
+    ) as HTMLParagraphElement;
+
+    const detailedAge = document.querySelector(
+      "#detailed-age"
+    ) as HTMLParagraphElement;
+
+    const detailedBloodtype = document.querySelector(
+      "#detailed-bloodtype"
+    ) as HTMLParagraphElement;
+
+    const detailedDob = document.querySelector(
+      "#detailed-dob"
+    ) as HTMLParagraphElement;
+
+    const card = document.querySelector("#character-card") as HTMLDivElement;
+
+    if (
+      !img ||
+      !name ||
+      !age ||
+      !animeElement ||
+      !listElement ||
+      !detailedAge ||
+      !detailedBloodtype ||
+      !detailedDob ||
+      !card ||
+      !favoriteElement
+    ) {
       throw new Error("HTML Element went missing...");
     }
 
     if (char) {
       const { character, anime, list } = char;
-      img.src = character.image.large;
-      name.innerHTML = character.name.full;
-      age.innerHTML = character.age || "?";
-      animeElement.innerHTML =
-        anime.media.title.english || anime.media.title.native;
-      if (anime) {
-        animeElement.href = anime.media.siteUrl;
-        animeElement.classList.remove("hide");
-      } else {
-        animeElement.classList.add("hide");
-      }
 
-      listElement.classList.remove("hide");
-      listElement.innerText = list.name;
+      card.classList.remove("flipped");
+
+      const realSrc = character.image.large;
+      const loader = new Image();
+      loader.src = character.image.large;
+
+      img.classList.add("blurredImage");
+
+      name.innerHTML = "Loading";
+      age.innerHTML = "";
+      favoriteElement.innerHTML = "";
+
+      detailedAge.innerHTML = "";
+      detailedBloodtype.innerHTML = "";
+      detailedDob.innerHTML = "";
+
+      animeElement.classList.add("hide");
+      listElement.classList.add("hide");
+      favoriteContainerElement.classList.add("hide");
+
+      // needed to not potentially fire twice
+      let isWaiting = true;
+
+      loader.onload = () => {
+        DEBUG: console.log("[dm-imgFinishedLoading] isWaiting:", isWaiting);
+        if (isWaiting) {
+          name.innerHTML = character.name.full;
+          age.innerHTML = getNumbersAtStartOfString(character.age || "") || "?";
+          animeElement.innerHTML =
+            anime.media.title.english || anime.media.title.native;
+
+          detailedAge.innerHTML = character.age || "unknown";
+          detailedBloodtype.innerHTML = character.bloodType || "unknown";
+          const { year, month, day } = character.dateOfBirth;
+          const str = getDateString(day, month, year);
+
+          detailedDob.innerHTML = str;
+
+          if (anime) {
+            animeElement.href = anime.media.siteUrl;
+            animeElement.classList.remove("hide");
+          } else {
+            animeElement.classList.add("hide");
+          }
+
+          DEBUG: console.log(
+            "[dm-presentCharacter] favorites",
+            character.favourites
+          );
+          if (character.favourites) {
+            favoriteElement.innerHTML = character.favourites.toString();
+            favoriteContainerElement.classList.remove("hide");
+          } else {
+            favoriteContainerElement.classList.add("hide");
+          }
+
+          listElement.classList.remove("hide");
+          listElement.innerText = list.name;
+          img.src = realSrc;
+          img.classList.remove("blurredImage");
+          this.changeInteractionEnabled(true);
+          isWaiting = false;
+        }
+      };
     } else {
       // placeholder image, will probably be changed later
       img.src =
         "https://cdn.pixabay.com/photo/2025/01/05/10/07/daffodils-9311747_1280.png";
       name.innerHTML = "No more characters";
       age.innerHTML = "";
+      favoriteContainerElement.classList.add("hide");
       animeElement.classList.add("hide");
       listElement.classList.add("hide");
       this.changeInteractionEnabled(false);
@@ -246,6 +379,8 @@ export class DisplayManager {
   }
 
   handleInteraction(content: InteractionContent) {
+    DEBUG: console.log("[dm-handleInteraction]", content.type);
+    this.changeInteractionEnabled(false);
     const historyEntry = document.createElement("div");
     const historyEntryImg = document.createElement("img");
     const historyEntryText = document.createElement("p");

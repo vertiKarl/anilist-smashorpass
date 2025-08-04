@@ -8,7 +8,7 @@ export interface Character {
   };
   gender: string;
   id: number;
-  age: string;
+  age?: string;
   bloodType?: string;
   dateOfBirth: {
     year: number;
@@ -16,7 +16,7 @@ export interface Character {
     day: number;
   };
   description: string;
-  favorites: number;
+  favourites: number;
   modNotes?: string;
   siteUrl: string;
 }

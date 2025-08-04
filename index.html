@@ -8,6 +8,7 @@
   </head>
   <body>
     <navbar class="stats">
+      <a class="home inline" href="/">⌂</a>
       <div class="inline" onclick="showSmashHistory()">
         <bold class="smashed">Smashed:</bold>
         <p id="smashedAmount">0</p>
@@ -63,6 +64,7 @@
       <span id="loader" class="loader hide"></span>
       <div id="character-card" class="character-card hide">
         <img id="character-image" />
+        <!-- the frontside of the card -->
         <div class="character-info">
           <div class="character-main-info">
             <span id="character-age"></span>
@@ -70,8 +72,30 @@
           </div>
           <div class="tags">
             <a class="tag hide" id="character-anime"></a>
-            <p class="tag" id="character-list"></p>
+            <div id="character-favorites-container" class="tag hide">
+              <bold>❤️</bold>
+              <p id="character-favorites"></p>
+            </div>
           </div>
+        </div>
+        <!-- the backside of the card -->
+        <div class="character-info-detailed">
+          <span class="row">
+            <bold>Age:</bold>
+            <p id="detailed-age"></p>
+          </span>
+          <span class="row">
+            <bold>Blood-type:</bold>
+            <p id="detailed-bloodtype"></p>
+          </span>
+          <span class="row">
+            <bold>Date of birth:</bold>
+            <p id="detailed-dob"></p>
+          </span>
+          <span class="row">
+            <bold>Pulled from list:</bold>
+            <p id="detailed-list"></p>
+          </span>
         </div>
       </div>
       <div class="interactions">
@@ -79,29 +103,88 @@
         <button id="pass" class="pass interaction hide">PASS</button>
       </div>
       <form id="configForm">
-        <select name="role">
-          <option>All</option>
-          <option>Main</option>
-          <option>Supporting</option>
-          <option>Background</option>
-        </select>
-        <input name="gender" placeholder="gender" />
-        <input name="username" placeholder="anilist username" />
-        <input
-          name="minAge"
-          placeholder="min-age"
-          type="number"
-          min="0"
-          max="10000000"
-        />
-        <input
-          name="maxAge"
-          placeholder="max-age"
-          type="number"
-          min="0"
-          max="10000000"
-        />
-        <button class="hide" type="submit"></button>
+        <h1>Settings</h1>
+        <div class="configRow">
+          <label for="role">Role</label>
+          <select name="role" class="configElement">
+            <option>All</option>
+            <option>Main</option>
+            <option>Supporting</option>
+            <option>Background</option>
+          </select>
+        </div>
+        <div class="configRow">
+          <label for="gender">Gender</label>
+          <input
+            list="genderSuggestions"
+            class="configElement"
+            name="gender"
+            placeholder="Female"
+          />
+          <datalist id="genderSuggestions" class="hide">
+            <option value="Female"></option>
+            <option value="Male"></option>
+          </datalist>
+        </div>
+        <div class="configRow">
+          <label for="username">Username (AniList)</label>
+          <input
+            name="username"
+            placeholder="anilist username"
+            class="configElement"
+            required
+          />
+        </div>
+        <div class="configRow">
+          <input
+            name="minAge"
+            placeholder="min-age"
+            type="number"
+            min="0"
+            max="10000000"
+          />
+          <input
+            name="maxAge"
+            placeholder="max-age"
+            type="number"
+            min="0"
+            max="10000000"
+          />
+        </div>
+        <div class="configRow">
+          <label for="watchState">Lists</label>
+          <ul class="configElement" multiple>
+            <div class="configRow">
+              <label for="watching">Watching</label>
+              <input name="watching" type="checkbox" value="false" />
+            </div>
+            <div class="configRow">
+              <label for="completed">Completed</label>
+              <input name="completed" type="checkbox" value="false" />
+            </div>
+            <div class="configRow">
+              <label for="dropped">Dropped</label>
+              <input name="dropped" type="checkbox" value="false" />
+            </div>
+            <div class="configRow">
+              <label for="onhold">On-hold</label>
+              <input name="onhold" type="checkbox" value="false" />
+            </div>
+            <div class="configRow">
+              <label for="planning">Planning</label>
+              <input name="planning" type="checkbox" value="false" />
+            </div>
+            <div class="configRow">
+              <label for="repeating">Repeating</label>
+              <input name="repeating" type="checkbox" value="false" />
+            </div>
+            <div class="configRow">
+              <label for="custom">Custom Lists</label>
+              <input name="custom" type="checkbox" value="false" />
+            </div>
+          </ul>
+        </div>
+        <button class="smash" type="submit">Start smashing</button>
       </form>
     </div>
     <script type="module" src="/src/main.ts"></script>

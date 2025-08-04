@@ -1,5 +1,5 @@
 import { DisplayManager } from "./DisplayManager";
-import type { Role } from "./api_connector";
+import type { ListType, Role } from "./api_connector";
 import "./style.css";
 
 window.onload = () => {
@@ -25,12 +25,22 @@ window.onload = () => {
         role = "ALL";
         break;
     }
+    const lists: ListType[] = [];
+    if (props.watching) lists.push("CURRENT");
+    if (props.completed) lists.push("COMPLETED");
+    if (props.dropped) lists.push("DROPPED");
+    if (props.onhold) lists.push("PAUSED");
+    if (props.planning) lists.push("PLANNING");
+    if (props.repeating) lists.push("REPEATING");
+    if (props.custom) lists.push("CUSTOM");
+    DEV: console.log("Lists requested:", lists);
 
     const dm = new DisplayManager(props.username as string, {
       role,
       gender: props.gender.toString(),
       minAge: props.minAge.toString(),
       maxAge: props.maxAge.toString(),
+      lists,
     });
 
     configForm.classList.add("hide");

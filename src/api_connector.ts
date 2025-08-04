@@ -2,11 +2,21 @@ import type { Character } from "./Character";
 
 export type Role = "MAIN" | "SUPPORTING" | "BACKGROUND" | "ALL";
 
+export type ListType =
+  | "CURRENT"
+  | "PLANNING"
+  | "COMPLETED"
+  | "DROPPED"
+  | "PAUSED"
+  | "REPEATING"
+  | "CUSTOM";
+
 export interface QueryOptions {
   role: Role;
   gender: string;
   minAge: string;
   maxAge: string;
+  lists: ListType[];
 }
 
 export interface ResponseData {
@@ -18,13 +28,7 @@ export interface ResponseData {
 export interface ListEntry {
   entries: MediaEntry[];
   name: string;
-  status?:
-    | "CURRENT"
-    | "PLANNING"
-    | "COMPLETED"
-    | "DROPPED"
-    | "PAUSED"
-    | "REPEATING";
+  status: ListType;
 }
 
 export interface MediaEntry {
@@ -64,6 +68,12 @@ export class ApiConnector {
   }
 
   private async getData(username: string, options?: QueryOptions) {
+    DEBUG: console.log(
+      "[api-getData] username:",
+      username,
+      "options:",
+      options
+    );
     const query = `query ExampleQuery($userName: String, $type: MediaType, $sort: [CharacterSort], $role: CharacterRole) {
   MediaListCollection(userName: $userName, type: $type) {
     lists {
@@ -129,17 +139,39 @@ export class ApiConnector {
   }
 
   private generateCharacterList(data: ResponseData, options?: QueryOptions) {
+    DEBUG: console.log(
+      "[api-generateCharacterList] data:",
+      data,
+      "options:",
+      options
+    );
     let characters: CacheElement[] = [];
     data.MediaListCollection.lists.forEach((list) => {
-      list.entries.forEach((entry) => {
-        entry.media.characters.nodes.forEach((char) => {
-          characters.push({
-            anime: entry,
-            character: char,
-            list,
+      // anilist returns null for list.status on custom lists
+      const type = list.status || "CUSTOM";
+
+      if (options?.lists.includes(type)) {
+        DEBUG: console.log(
+          "[api-generateCharacterList]",
+          "Options include type",
+          type
+        );
+        list.entries.forEach((entry) => {
+          entry.media.characters.nodes.forEach((char) => {
+            characters.push({
+              anime: entry,
+              character: char,
+              list,
+            });
           });
         });
-      });
+      } else {
+        DEBUG: console.log(
+          "[api-generateCharacterList]",
+          "Options do not include type",
+          type
+        );
+      }
     });
 
     if (options) {
@@ -176,6 +208,7 @@ export class ApiConnector {
   }
 
   public pickNewCharacter(): CacheElement | null {
+    DEBUG: console.log("[api-pickNewCharacter]");
     const index = Math.floor(Math.random() * this.characterCache.length);
     const cacheItem = this.characterCache.splice(index, 1)?.[0];
     if (!cacheItem) {
