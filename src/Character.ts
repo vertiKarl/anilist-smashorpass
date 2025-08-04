@@ -1,4 +1,7 @@
+import type { MediaEntry } from "./api_connector";
+
 export interface Character {
+  related: MediaEntry[];
   name: {
     full: string;
     native: string;

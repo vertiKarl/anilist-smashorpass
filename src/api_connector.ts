@@ -158,6 +158,7 @@ export class ApiConnector {
         );
         list.entries.forEach((entry) => {
           entry.media.characters.nodes.forEach((char) => {
+            char.related = [];
             characters.push({
               anime: entry,
               character: char,
@@ -195,11 +196,17 @@ export class ApiConnector {
     }
 
     // removing duplicate characters by their id
-    const seenIds = new Set();
-    characters = characters.filter(({ character }) => {
-      if (seenIds.has(character.id)) return false;
+    const seenIds = new Map<number, CacheElement>();
+    characters = characters.filter((media) => {
+      const { anime, character } = media;
+      character.related.push(anime);
 
-      seenIds.add(character.id);
+      if (seenIds.has(character.id)) {
+        seenIds.get(character.id)?.character?.related.push(anime);
+        return false;
+      }
+
+      seenIds.set(character.id, media);
       return true;
     });
 

@@ -331,6 +331,13 @@ export class DisplayManager {
           age.innerHTML = getNumbersAtStartOfString(character.age || "") || "?";
           animeElement.innerHTML =
             anime.media.title.english || anime.media.title.native;
+          animeElement.title = "";
+
+          const arr = character.related.map(({ media }) => {
+            return media.title.english || media.title.native;
+          });
+
+          animeElement.title = arr.join("\n");
 
           detailedAge.innerHTML = character.age || "unknown";
           detailedBloodtype.innerHTML = character.bloodType || "unknown";
