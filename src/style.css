@@ -96,6 +96,13 @@ img {
 .interaction {
   width: 45%;
   box-shadow: 16px 16px 20px black;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.interaction:hover {
+  transform: scaleX(110%);
+  border: none;
 }
 
 .hide {
@@ -139,6 +146,9 @@ img {
 
 .row > *:first-child {
   margin-right: 0.4rem;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 0.2rem;
+  padding: 0.4rem;
 }
 
 #character-favorites-container {
@@ -247,6 +257,7 @@ button:disabled {
 
 .character-card.flipped {
   transform: rotateY(180deg);
+  box-shadow: -16px 16px 20px black;
 }
 
 .character-card.flipped > .character-info {

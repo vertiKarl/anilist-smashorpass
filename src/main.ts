@@ -2,6 +2,12 @@ import { DisplayManager } from "./DisplayManager";
 import type { ListType, Role } from "./api_connector";
 import "./style.css";
 
+// prevent accidental leaving of page
+window.addEventListener("beforeunload", (event) => {
+  event.preventDefault();
+  event.returnValue = "";
+});
+
 window.onload = () => {
   const configForm = document.querySelector("#configForm") as HTMLFormElement;
   configForm.onsubmit = (event) => {
