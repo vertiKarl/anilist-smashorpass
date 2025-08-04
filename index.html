@@ -62,6 +62,7 @@
     </navbar>
     <div id="app">
       <span id="loader" class="loader hide"></span>
+      <h2 class="hide" id="progress"></h2>
       <div id="character-card" class="character-card hide">
         <img id="character-image" />
         <!-- the frontside of the card -->
@@ -72,7 +73,11 @@
           </div>
           <div class="tags">
             <a class="tag hide" id="character-anime"></a>
-            <div id="character-favorites-container" class="tag hide">
+            <div
+              title="Favorites"
+              id="character-favorites-container"
+              class="tag hide"
+            >
               <bold>❤️</bold>
               <p id="character-favorites"></p>
             </div>

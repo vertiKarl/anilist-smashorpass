@@ -61,6 +61,10 @@ export class DisplayManager {
     this.connector.waitTillReady().then(() => {
       DEBUG: console.log("[dm-connector] ready");
       this.setupAnimations();
+      const progress = document.querySelector(
+        "#progress"
+      ) as HTMLHeadingElement;
+      progress.classList.remove("hide");
       const char = this.connector.pickNewCharacter();
       this.presentCharacter(char || undefined);
 
@@ -246,8 +250,19 @@ export class DisplayManager {
     return arr;
   }
 
+  private updateProgress() {
+    DEBUG: console.log("[dm-updateProgress]");
+    const head = document.querySelector("#progress") as HTMLHeadingElement;
+    const total = this.getAmount("smash") + this.getAmount("pass");
+    head.innerHTML = `${total}/${this.connector.originalAmount} (${(
+      (total / this.connector.originalAmount) *
+      100
+    ).toFixed(2)}%)`;
+  }
+
   presentCharacter(char?: CacheElement) {
     DEBUG: console.log("[dm-presentCharacter]", char);
+    this.updateProgress();
     this.currentCharacter = char || null;
     const img = document.querySelector("#character-image") as HTMLImageElement;
     const name = document.querySelector(
