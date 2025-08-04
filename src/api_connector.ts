@@ -48,8 +48,8 @@ export interface CacheElement {
 
 export class ApiConnector {
   characterCache: CacheElement[] = [];
-  private currentCharacter?: CacheElement;
   public originalAmount = 0;
+  private ready = false;
 
   constructor(username: string, options?: QueryOptions) {
     this.getData(username, options);
@@ -58,7 +58,7 @@ export class ApiConnector {
   public waitTillReady(): Promise<void> {
     return new Promise((resolve) => {
       setInterval(() => {
-        if (this.currentCharacter) resolve();
+        if (this.ready) resolve();
       });
     });
   }
@@ -125,7 +125,7 @@ export class ApiConnector {
     const { data } = await res.json();
 
     this.generateCharacterList(data, options);
-    this.pickNewCharacter();
+    this.ready = true;
   }
 
   private generateCharacterList(data: ResponseData, options?: QueryOptions) {
@@ -175,50 +175,14 @@ export class ApiConnector {
     this.characterCache = characters;
   }
 
-  public pickNewCharacter() {
+  public pickNewCharacter(): CacheElement | null {
     const index = Math.floor(Math.random() * this.characterCache.length);
     const cacheItem = this.characterCache.splice(index, 1)?.[0];
     if (!cacheItem) {
       console.log("No more characters!");
-      return;
+      return null;
     }
 
-    const { character, anime, list } = cacheItem;
-
-    const img = document.querySelector("#character-image") as HTMLImageElement;
-    const name = document.querySelector(
-      "#character-name"
-    ) as HTMLHeadingElement;
-    const age = document.querySelector("#character-age") as HTMLHeadingElement;
-    const animeElement = document.querySelector(
-      "#character-anime"
-    ) as HTMLAnchorElement;
-    const listElement = document.querySelector(
-      "#character-list"
-    ) as HTMLParagraphElement;
-
-    if (!img || !name || !age || !animeElement || !listElement) {
-      throw new Error("HTML Element went missing...");
-    }
-
-    img.src = character.image.large;
-    name.innerHTML = character.name.full;
-    age.innerHTML = character.age || "?";
-    animeElement.innerHTML =
-      anime.media.title.english || anime.media.title.native;
-    if (anime) {
-      animeElement.href = anime.media.siteUrl;
-      animeElement.classList.remove("hide");
-    } else {
-      animeElement.classList.add("hide");
-    }
-
-    listElement.innerText = list.name;
-
-    this.currentCharacter = { character, anime, list };
-  }
-
-  public getCurrentCharacter() {
-    return this.currentCharacter;
+    return cacheItem;
   }
 }

@@ -23,6 +23,8 @@ const keys = [
 export class DisplayManager {
   private history: Record<InteractionType, InteractionContent>;
   private connector: ApiConnector;
+  private currentCharacter: CacheElement | null = null;
+  private interactionDisabled = true;
 
   constructor(username: string, options?: QueryOptions) {
     this.connector = new ApiConnector(username, options);
@@ -56,21 +58,38 @@ export class DisplayManager {
     loader.classList.remove("hide");
 
     this.connector.waitTillReady().then(() => {
+      const char = this.connector.pickNewCharacter();
+      this.presentCharacter(char || undefined);
+
       loader.classList.add("hide");
       this.history.smash.buttonElement.classList.remove("hide");
       this.history.smash.buttonElement.onclick = () => {
-        this.handleInteraction(this.history.smash);
+        if (!this.interactionDisabled)
+          this.handleInteraction(this.history.smash);
       };
       this.history.pass.buttonElement.classList.remove("hide");
       this.history.pass.buttonElement.onclick = () => {
-        this.handleInteraction(this.history.pass);
+        if (!this.interactionDisabled)
+          this.handleInteraction(this.history.pass);
       };
 
       const characterCard = document.querySelector(
         "#character-card"
       ) as HTMLDivElement;
       characterCard.classList.remove("hide");
+      this.interactionDisabled = false;
     });
+  }
+
+  /**
+   * Enables or disables the ability for the user to "smash" or "pass"
+   * @param bool true to enable interaction elements
+   */
+  private changeInteractionEnabled(bool: boolean) {
+    this.interactionDisabled = bool;
+
+    this.history.pass.buttonElement.setAttribute("disabled", `${bool}`);
+    this.history.smash.buttonElement.setAttribute("disabled", `${bool}`);
   }
 
   getAverageAge(type: InteractionType) {
@@ -180,11 +199,57 @@ export class DisplayManager {
     return arr;
   }
 
+  presentCharacter(char?: CacheElement) {
+    this.currentCharacter = char || null;
+    const img = document.querySelector("#character-image") as HTMLImageElement;
+    const name = document.querySelector(
+      "#character-name"
+    ) as HTMLHeadingElement;
+    const age = document.querySelector("#character-age") as HTMLHeadingElement;
+    const animeElement = document.querySelector(
+      "#character-anime"
+    ) as HTMLAnchorElement;
+    const listElement = document.querySelector(
+      "#character-list"
+    ) as HTMLParagraphElement;
+
+    if (!img || !name || !age || !animeElement || !listElement) {
+      throw new Error("HTML Element went missing...");
+    }
+
+    if (char) {
+      const { character, anime, list } = char;
+      img.src = character.image.large;
+      name.innerHTML = character.name.full;
+      age.innerHTML = character.age || "?";
+      animeElement.innerHTML =
+        anime.media.title.english || anime.media.title.native;
+      if (anime) {
+        animeElement.href = anime.media.siteUrl;
+        animeElement.classList.remove("hide");
+      } else {
+        animeElement.classList.add("hide");
+      }
+
+      listElement.classList.remove("hide");
+      listElement.innerText = list.name;
+    } else {
+      // placeholder image, will probably be changed later
+      img.src =
+        "https://cdn.pixabay.com/photo/2025/01/05/10/07/daffodils-9311747_1280.png";
+      name.innerHTML = "No more characters";
+      age.innerHTML = "";
+      animeElement.classList.add("hide");
+      listElement.classList.add("hide");
+      this.changeInteractionEnabled(false);
+    }
+  }
+
   handleInteraction(content: InteractionContent) {
     const historyEntry = document.createElement("div");
     const historyEntryImg = document.createElement("img");
     const historyEntryText = document.createElement("p");
-    const currentCharacter = this.connector.getCurrentCharacter();
+    const currentCharacter = this.currentCharacter;
     if (!currentCharacter) {
       throw new Error("No character to interact with!");
     }
@@ -208,7 +273,8 @@ export class DisplayManager {
         this.connector.originalAmount
     );
 
-    this.connector.pickNewCharacter();
+    const char = this.connector.pickNewCharacter();
+    this.presentCharacter(char || undefined);
 
     content.amountElement.innerHTML = content.characters.length.toString();
   }
