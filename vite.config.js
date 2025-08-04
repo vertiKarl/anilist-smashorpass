@@ -1,7 +1,8 @@
 /** @type {import('vite').UserConfig} */
 import { resolve } from "node:path";
+import { defineConfig } from "vite";
 
-export default {
+export default defineConfig(({ mode }) => ({
   base: "/anilist-smashorpass",
   build: {
     rollupOptions: {
@@ -11,4 +12,10 @@ export default {
       },
     },
   },
-};
+  esbuild:
+    mode === "production"
+      ? {
+          dropLabels: ["DEBUG"],
+        }
+      : {},
+}));

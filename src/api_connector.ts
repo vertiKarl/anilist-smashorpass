@@ -2,11 +2,21 @@ import type { Character } from "./Character";
 
 export type Role = "MAIN" | "SUPPORTING" | "BACKGROUND" | "ALL";
 
+export type ListType =
+  | "CURRENT"
+  | "PLANNING"
+  | "COMPLETED"
+  | "DROPPED"
+  | "PAUSED"
+  | "REPEATING"
+  | "CUSTOM";
+
 export interface QueryOptions {
   role: Role;
   gender: string;
   minAge: string;
   maxAge: string;
+  lists: ListType[];
 }
 
 export interface ResponseData {
@@ -18,13 +28,7 @@ export interface ResponseData {
 export interface ListEntry {
   entries: MediaEntry[];
   name: string;
-  status?:
-    | "CURRENT"
-    | "PLANNING"
-    | "COMPLETED"
-    | "DROPPED"
-    | "PAUSED"
-    | "REPEATING";
+  status: ListType;
 }
 
 export interface MediaEntry {
@@ -48,8 +52,8 @@ export interface CacheElement {
 
 export class ApiConnector {
   characterCache: CacheElement[] = [];
-  private currentCharacter?: CacheElement;
   public originalAmount = 0;
+  private ready = false;
 
   constructor(username: string, options?: QueryOptions) {
     this.getData(username, options);
@@ -58,12 +62,18 @@ export class ApiConnector {
   public waitTillReady(): Promise<void> {
     return new Promise((resolve) => {
       setInterval(() => {
-        if (this.currentCharacter) resolve();
+        if (this.ready) resolve();
       });
     });
   }
 
   private async getData(username: string, options?: QueryOptions) {
+    DEBUG: console.log(
+      "[api-getData] username:",
+      username,
+      "options:",
+      options
+    );
     const query = `query ExampleQuery($userName: String, $type: MediaType, $sort: [CharacterSort], $role: CharacterRole) {
   MediaListCollection(userName: $userName, type: $type) {
     lists {
@@ -125,21 +135,44 @@ export class ApiConnector {
     const { data } = await res.json();
 
     this.generateCharacterList(data, options);
-    this.pickNewCharacter();
+    this.ready = true;
   }
 
   private generateCharacterList(data: ResponseData, options?: QueryOptions) {
+    DEBUG: console.log(
+      "[api-generateCharacterList] data:",
+      data,
+      "options:",
+      options
+    );
     let characters: CacheElement[] = [];
     data.MediaListCollection.lists.forEach((list) => {
-      list.entries.forEach((entry) => {
-        entry.media.characters.nodes.forEach((char) => {
-          characters.push({
-            anime: entry,
-            character: char,
-            list,
+      // anilist returns null for list.status on custom lists
+      const type = list.status || "CUSTOM";
+
+      if (options?.lists.includes(type)) {
+        DEBUG: console.log(
+          "[api-generateCharacterList]",
+          "Options include type",
+          type
+        );
+        list.entries.forEach((entry) => {
+          entry.media.characters.nodes.forEach((char) => {
+            char.related = [];
+            characters.push({
+              anime: entry,
+              character: char,
+              list,
+            });
           });
         });
-      });
+      } else {
+        DEBUG: console.log(
+          "[api-generateCharacterList]",
+          "Options do not include type",
+          type
+        );
+      }
     });
 
     if (options) {
@@ -163,11 +196,17 @@ export class ApiConnector {
     }
 
     // removing duplicate characters by their id
-    const seenIds = new Set();
-    characters = characters.filter(({ character }) => {
-      if (seenIds.has(character.id)) return false;
+    const seenIds = new Map<number, CacheElement>();
+    characters = characters.filter((media) => {
+      const { anime, character } = media;
+      character.related.push(anime);
 
-      seenIds.add(character.id);
+      if (seenIds.has(character.id)) {
+        seenIds.get(character.id)?.character?.related.push(anime);
+        return false;
+      }
+
+      seenIds.set(character.id, media);
       return true;
     });
 
@@ -175,50 +214,15 @@ export class ApiConnector {
     this.characterCache = characters;
   }
 
-  public pickNewCharacter() {
+  public pickNewCharacter(): CacheElement | null {
+    DEBUG: console.log("[api-pickNewCharacter]");
     const index = Math.floor(Math.random() * this.characterCache.length);
     const cacheItem = this.characterCache.splice(index, 1)?.[0];
     if (!cacheItem) {
       console.log("No more characters!");
-      return;
+      return null;
     }
 
-    const { character, anime, list } = cacheItem;
-
-    const img = document.querySelector("#character-image") as HTMLImageElement;
-    const name = document.querySelector(
-      "#character-name"
-    ) as HTMLHeadingElement;
-    const age = document.querySelector("#character-age") as HTMLHeadingElement;
-    const animeElement = document.querySelector(
-      "#character-anime"
-    ) as HTMLAnchorElement;
-    const listElement = document.querySelector(
-      "#character-list"
-    ) as HTMLParagraphElement;
-
-    if (!img || !name || !age || !animeElement || !listElement) {
-      throw new Error("HTML Element went missing...");
-    }
-
-    img.src = character.image.large;
-    name.innerHTML = character.name.full;
-    age.innerHTML = character.age || "?";
-    animeElement.innerHTML =
-      anime.media.title.english || anime.media.title.native;
-    if (anime) {
-      animeElement.href = anime.media.siteUrl;
-      animeElement.classList.remove("hide");
-    } else {
-      animeElement.classList.add("hide");
-    }
-
-    listElement.innerText = list.name;
-
-    this.currentCharacter = { character, anime, list };
-  }
-
-  public getCurrentCharacter() {
-    return this.currentCharacter;
+    return cacheItem;
   }
 }
