@@ -338,12 +338,12 @@ button:disabled {
 }
 
 .character-card.swipe-smash {
-  transform: rotateZ(-90deg) translateY(-200%);
+  transform: rotateZ(-90deg) translateY(-100vw);
   transition: transform 0.6s ease;
 }
 
 .character-card.swipe-pass {
-  transform: rotateZ(90deg) translateY(-200%);
+  transform: rotateZ(90deg) translateY(-100vw);
   transition: transform 0.6s ease;
 }
 
