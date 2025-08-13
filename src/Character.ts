@@ -1,5 +1,11 @@
 import type { MediaEntry } from "./api_connector";
 
+export enum SmashState {
+  UNDECIDED,
+  SMASHED,
+  PASSED,
+}
+
 export interface Character {
   related: MediaEntry[];
   name: {
@@ -22,4 +28,5 @@ export interface Character {
   favourites: number;
   modNotes?: string;
   siteUrl: string;
+  smashState: SmashState;
 }

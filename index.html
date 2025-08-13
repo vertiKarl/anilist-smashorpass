@@ -68,8 +68,8 @@
         <!-- the frontside of the card -->
         <div class="character-info">
           <div class="character-main-info">
-            <span id="character-age"></span>
-            <span id="character-name"></span>
+            <span title="Age" id="character-age"></span>
+            <span title="Name" id="character-name"></span>
           </div>
           <div class="tags">
             <a class="tag hide" id="character-anime"></a>
@@ -104,8 +104,10 @@
         </div>
       </div>
       <div class="interactions">
+        <button id="previous" class="hide" disabled>←</button>
         <button id="smash" class="smash interaction hide">SMASH</button>
         <button id="pass" class="pass interaction hide">PASS</button>
+        <button id="next" class="hide">→</button>
       </div>
       <form id="configForm">
         <h1>Settings</h1>
@@ -113,7 +115,7 @@
           <label for="role">Role</label>
           <select name="role" class="configElement">
             <option>All</option>
-            <option>Main</option>
+            <option selected>Main</option>
             <option>Supporting</option>
             <option>Background</option>
           </select>
@@ -141,6 +143,7 @@
           />
         </div>
         <div class="configRow">
+          <label for="age">Age</label>
           <input
             name="minAge"
             placeholder="min-age"

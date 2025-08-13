@@ -1,4 +1,5 @@
-import type { Character } from "./Character";
+import { SmashState, type Character } from "./Character";
+import { shuffle } from "./util";
 
 export type Role = "MAIN" | "SUPPORTING" | "BACKGROUND" | "ALL";
 
@@ -122,7 +123,7 @@ export class ApiConnector {
       role: options?.role !== "ALL" ? options?.role : undefined,
     };
 
-    console.log("Fetching data with variables:", variables);
+    DEBUG: console.log("Fetching data with variables:", variables);
 
     const res = await fetch("https://graphql.anilist.co", {
       method: "POST",
@@ -159,6 +160,7 @@ export class ApiConnector {
         list.entries.forEach((entry) => {
           entry.media.characters.nodes.forEach((char) => {
             char.related = [];
+            char.smashState = SmashState.UNDECIDED;
             characters.push({
               anime: entry,
               character: char,
@@ -211,18 +213,12 @@ export class ApiConnector {
     });
 
     this.originalAmount = characters.length;
-    this.characterCache = characters;
+
+    this.characterCache = shuffle(characters);
   }
 
-  public pickNewCharacter(): CacheElement | null {
-    DEBUG: console.log("[api-pickNewCharacter]");
-    const index = Math.floor(Math.random() * this.characterCache.length);
-    const cacheItem = this.characterCache.splice(index, 1)?.[0];
-    if (!cacheItem) {
-      console.log("No more characters!");
-      return null;
-    }
-
-    return cacheItem;
+  getCharacterList() {
+    if (!this.characterCache || this.characterCache.length <= 0) return null;
+    return this.characterCache;
   }
 }
