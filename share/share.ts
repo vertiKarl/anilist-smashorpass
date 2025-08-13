@@ -1,3 +1,4 @@
+import { SmashState } from "../src/Character";
 import { DisplayManager } from "../src/DisplayManager";
 
 window.onload = () => {
@@ -10,7 +11,21 @@ window.onload = () => {
     const li = document.createElement("li");
     const img = document.createElement("img");
     const p = document.createElement("p");
-    p.innerText = `${result.id} (${result.type})`;
+
+    let type: string;
+    switch (result.type) {
+      case SmashState.SMASHED:
+        type = "smashed";
+        break;
+      case SmashState.PASSED:
+        type = "passed";
+        break;
+      default:
+        type = "undecided";
+        break;
+    }
+
+    p.innerText = `${result.id} (${type})`;
     li.append(img, p);
     listElement.append(li);
   });

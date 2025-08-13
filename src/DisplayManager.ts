@@ -1,3 +1,4 @@
+import { SmashState } from "./Character";
 import {
   ApiConnector,
   type CacheElement,
@@ -9,7 +10,6 @@ export type InteractionType = "smash" | "pass";
 
 export interface InteractionContent {
   type: InteractionType;
-  characters: CacheElement[];
   buttonElement: HTMLButtonElement;
   historyElement: HTMLDivElement;
   amountElement: HTMLParagraphElement;
@@ -21,11 +21,15 @@ const keys = [
   ...Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)), // 'A' to 'Z'
 ];
 
+type Navigation = "PREVIOUS" | "NEXT";
+
 export class DisplayManager {
   private history: Record<InteractionType, InteractionContent>;
+  private characters: CacheElement[] = [];
   private connector: ApiConnector;
-  private currentCharacter: CacheElement | null = null;
+  private currentCharacter = 0;
   private interactionEnabled = false;
+  private navigationButtons: Record<Navigation, HTMLButtonElement | null>;
 
   constructor(username: string, options?: QueryOptions) {
     this.connector = new ApiConnector(username, options);
@@ -33,7 +37,6 @@ export class DisplayManager {
     this.history = {
       smash: {
         type: "smash",
-        characters: [],
         buttonElement: document.querySelector("#smash") as HTMLButtonElement,
         historyElement: document.querySelector(
           "#smashHistory"
@@ -44,7 +47,6 @@ export class DisplayManager {
       },
       pass: {
         type: "pass",
-        characters: [],
         buttonElement: document.querySelector("#pass") as HTMLButtonElement,
         historyElement: document.querySelector(
           "#passHistory"
@@ -58,17 +60,38 @@ export class DisplayManager {
     const loader = document.querySelector("#loader") as HTMLSpanElement;
     loader.classList.remove("hide");
 
+    this.navigationButtons = {
+      PREVIOUS: document.getElementById("previous") as HTMLButtonElement,
+      NEXT: document.getElementById("next") as HTMLButtonElement,
+    };
+
     this.connector.waitTillReady().then(() => {
       DEBUG: console.log("[dm-connector] ready");
+      const characters = this.connector.getCharacterList();
+      if (!characters) throw new Error("Failed retrieving character list!");
+
+      this.characters = characters;
       this.setupAnimations();
       const progress = document.querySelector(
         "#progress"
       ) as HTMLHeadingElement;
       progress.classList.remove("hide");
-      const char = this.connector.pickNewCharacter();
-      this.presentCharacter(char || undefined);
+      this.presentCharacter(0);
 
       loader.classList.add("hide");
+
+      for (const [type, button] of Object.entries(this.navigationButtons)) {
+        if (button) {
+          button.classList.remove("hide");
+          button.onclick = () => {
+            if (this.interactionEnabled) {
+              (type as Navigation) === "PREVIOUS" && this.previousCharacter();
+              (type as Navigation) === "NEXT" && this.nextCharacter();
+            }
+          };
+        }
+      }
+
       this.history.smash.buttonElement.classList.remove("hide");
       this.history.smash.buttonElement.onclick = () => {
         if (this.interactionEnabled) this.handleInteraction(this.history.smash);
@@ -83,6 +106,24 @@ export class DisplayManager {
       ) as HTMLDivElement;
       characterCard.classList.remove("hide");
       this.interactionEnabled = true;
+
+      (window as any).showSmashHistory = () => {
+        const element = document.querySelector("#smashHistoryContainer");
+        if (element?.classList.contains("hide")) {
+          this.buildHistoryElement(SmashState.SMASHED);
+        }
+
+        element?.classList.toggle("hide");
+      };
+
+      (window as any).showPassHistory = () => {
+        const element = document.querySelector("#passHistoryContainer");
+        if (element?.classList.contains("hide")) {
+          this.buildHistoryElement(SmashState.PASSED);
+        }
+
+        element?.classList.toggle("hide");
+      };
     });
   }
 
@@ -124,6 +165,45 @@ export class DisplayManager {
     });
   }
 
+  private buildHistoryElement(type: SmashState) {
+    const container =
+      type === SmashState.SMASHED
+        ? document.querySelector("#smashHistory")
+        : document.querySelector("#passHistory");
+    if (!container)
+      throw new Error("Can't build history element, container is missing");
+
+    this.characters.forEach((char) => {
+      if (char.character.smashState === type) {
+        const historyEntry = document.createElement("div");
+        const historyEntryImg = document.createElement("img");
+        const historyEntryText = document.createElement("p");
+
+        const animeName = char.anime.media.title.english
+          ? char.anime.media.title.english
+          : char.anime.media.title.native;
+
+        historyEntryText.innerHTML = `${char.character.name.full} (${animeName})`;
+        historyEntryImg.src = char.character.image.large;
+
+        historyEntry.append(historyEntryImg, historyEntryText);
+        container.append(historyEntry);
+      }
+    });
+  }
+
+  private nextCharacter() {
+    if (this.currentCharacter < this.characters.length) {
+      this.presentCharacter(++this.currentCharacter);
+    }
+  }
+
+  private previousCharacter() {
+    if (this.currentCharacter > 0) {
+      this.presentCharacter(--this.currentCharacter);
+    }
+  }
+
   /**
    * Enables or disables the ability for the user to "smash" or "pass"
    * @param bool true to enable interaction elements
@@ -134,17 +214,22 @@ export class DisplayManager {
     this.interactionEnabled = bool;
 
     // set both buttons to the correct state
-    [this.history.pass.buttonElement, this.history.smash.buttonElement].forEach(
-      (button) => {
-        bool
-          ? button.removeAttribute("disabled")
-          : button.setAttribute("disabled", "");
-      }
-    );
+    [
+      this.history.pass.buttonElement,
+      this.history.smash.buttonElement,
+      this.navigationButtons.PREVIOUS,
+      this.navigationButtons.NEXT,
+    ].forEach((button) => {
+      bool
+        ? button?.removeAttribute("disabled")
+        : button?.setAttribute("disabled", "");
+    });
   }
 
-  getAverageAge(type: InteractionType) {
-    const chars = this.history[type].characters;
+  getAverageAge(type: SmashState) {
+    const chars = this.characters.filter((element) => {
+      return element.character.smashState === type;
+    });
     let averageAge = 0;
     let charAmount = 0;
 
@@ -159,8 +244,10 @@ export class DisplayManager {
     return averageAge / charAmount;
   }
 
-  getAmount(type: InteractionType) {
-    return this.history[type].characters.length;
+  getAmount(type: SmashState) {
+    return this.characters.filter(
+      (element) => element.character.smashState === type
+    ).length;
   }
 
   /**
@@ -212,7 +299,8 @@ export class DisplayManager {
     }
 
     const id = result >> 1;
-    const type: InteractionType = result % 2 === 1 ? "smash" : "pass";
+    const type: SmashState =
+      result % 2 === 1 ? SmashState.SMASHED : SmashState.PASSED;
 
     return { id, type };
   }
@@ -223,12 +311,22 @@ export class DisplayManager {
    */
   generateShareUrl() {
     let str = "";
-    this.history.smash.characters.forEach((char) => {
-      str += DisplayManager.compress(char.character.id, true);
-    });
-    this.history.pass.characters.forEach((char) => {
-      str += DisplayManager.compress(char.character.id, false);
-    });
+    this.characters
+      .filter((char) => char.character.smashState !== SmashState.UNDECIDED)
+      .sort((a, b) => {
+        const rankA = a.character.smashState === SmashState.SMASHED ? 0 : 1;
+        const rankB = b.character.smashState === SmashState.SMASHED ? 0 : 1;
+        return rankA - rankB;
+      })
+      .forEach((char) => {
+        const compressedStr = DisplayManager.compress(
+          char.character.id,
+          char.character.smashState === SmashState.SMASHED
+        );
+
+        DEBUG: console.log(char, "compressed to", compressedStr);
+        str += compressedStr;
+      });
 
     return "/anilist-smashorpass/share/?" + str;
   }
@@ -241,7 +339,7 @@ export class DisplayManager {
   public static resolveShareUrl(str: string) {
     const arr: {
       id: number;
-      type: InteractionType;
+      type: SmashState;
     }[] = [];
     for (let i = 0; i < str.length; i += 4) {
       const string = str.slice(i, i + 4);
@@ -253,17 +351,26 @@ export class DisplayManager {
   private updateProgress() {
     DEBUG: console.log("[dm-updateProgress]");
     const head = document.querySelector("#progress") as HTMLHeadingElement;
-    const total = this.getAmount("smash") + this.getAmount("pass");
-    head.innerHTML = `${total}/${this.connector.originalAmount} (${(
-      (total / this.connector.originalAmount) *
+    const total = this.characters.length;
+    const amountRated = (() =>
+      this.characters.filter(
+        (c) => c.character.smashState !== SmashState.UNDECIDED
+      ).length)();
+    head.innerHTML = `${this.currentCharacter}/${total} (${(
+      (amountRated / total) *
       100
     ).toFixed(2)}%)`;
   }
 
-  presentCharacter(char?: CacheElement) {
-    DEBUG: console.log("[dm-presentCharacter]", char);
+  presentCharacter(index: number) {
+    DEBUG: console.log(
+      "[dm-presentCharacter]",
+      index,
+      this.characters[index] || null
+    );
     this.updateProgress();
-    this.currentCharacter = char || null;
+    this.currentCharacter = index;
+    const char = this.characters[index] || null;
     const img = document.querySelector("#character-image") as HTMLImageElement;
     const name = document.querySelector(
       "#character-name"
@@ -316,7 +423,7 @@ export class DisplayManager {
     if (char) {
       const { character, anime, list } = char;
 
-      card.classList.remove("flipped");
+      card.classList.remove("flipped", "smashed", "passed");
 
       const realSrc = character.image.large;
       const loader = new Image();
@@ -347,6 +454,19 @@ export class DisplayManager {
           animeElement.innerHTML =
             anime.media.title.english || anime.media.title.native;
           animeElement.title = "";
+
+          switch (character.smashState) {
+            case SmashState.SMASHED:
+              card.classList.add("smashed");
+              break;
+
+            case SmashState.PASSED:
+              card.classList.add("passed");
+              break;
+            default:
+              card.classList.remove("smashed", "passed");
+              break;
+          }
 
           const arr = character.related.map(({ media }) => {
             return media.title.english || media.title.native;
@@ -384,6 +504,18 @@ export class DisplayManager {
           img.src = realSrc;
           img.classList.remove("blurredImage");
           this.changeInteractionEnabled(true);
+
+          if (this.currentCharacter <= 0) {
+            this.navigationButtons.PREVIOUS?.setAttribute("disabled", "");
+          } else {
+            this.navigationButtons.PREVIOUS?.removeAttribute("disabled");
+          }
+
+          if (this.currentCharacter >= this.characters.length - 1) {
+            this.navigationButtons.NEXT?.setAttribute("disabled", "");
+          } else {
+            this.navigationButtons.NEXT?.removeAttribute("disabled");
+          }
           isWaiting = false;
         }
       };
@@ -403,36 +535,37 @@ export class DisplayManager {
   handleInteraction(content: InteractionContent) {
     DEBUG: console.log("[dm-handleInteraction]", content.type);
     this.changeInteractionEnabled(false);
-    const historyEntry = document.createElement("div");
-    const historyEntryImg = document.createElement("img");
-    const historyEntryText = document.createElement("p");
-    const currentCharacter = this.currentCharacter;
-    if (!currentCharacter) {
+    const currentCharacter = this.characters[this.currentCharacter];
+    if (!currentCharacter || this.currentCharacter >= this.characters.length) {
       throw new Error("No character to interact with!");
     }
 
-    content.characters.push(currentCharacter);
+    const card = document.querySelector("#character-card") as HTMLDivElement;
+    const app = document.querySelector("#app") as HTMLDivElement;
 
-    const animeName = currentCharacter.anime.media.title.english
-      ? currentCharacter.anime.media.title.english
-      : currentCharacter.anime.media.title.native;
+    if (content.type === "smash") {
+      card.classList.add("swipe-smash");
+      app.classList.add("smash-border");
+      currentCharacter.character.smashState = SmashState.SMASHED;
+    } else if (content.type === "pass") {
+      card.classList.add("swipe-pass");
+      app.classList.add("pass-border");
+      currentCharacter.character.smashState = SmashState.PASSED;
+    }
 
-    historyEntryText.innerHTML = `${currentCharacter.character.name.full} (${animeName})`;
-    historyEntryImg.src = currentCharacter.character.image.large;
+    setTimeout(() => {
+      app.classList.remove("smash-border", "pass-border");
+      card.classList.remove("swipe-smash", "swipe-pass");
+    }, 600);
 
-    historyEntry.append(historyEntryImg, historyEntryText);
-    content.historyElement.append(historyEntry);
+    this.nextCharacter();
 
-    console.log(
-      this.history.pass.characters.length +
-        this.history.smash.characters.length +
-        "/" +
-        this.connector.originalAmount
-    );
-
-    const char = this.connector.pickNewCharacter();
-    this.presentCharacter(char || undefined);
-
-    content.amountElement.innerHTML = content.characters.length.toString();
+    content.amountElement.innerHTML = this.characters
+      .filter(
+        (el) =>
+          el.character.smashState ===
+          (content.type === "smash" ? SmashState.SMASHED : SmashState.PASSED)
+      )
+      .length.toString();
   }
 }

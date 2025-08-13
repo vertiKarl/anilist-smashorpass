@@ -85,3 +85,26 @@ export function clamp(num: number, min: number, max: number) {
 export function getNumbersAtStartOfString(str: string) {
   return str.match(/^\d+/)?.[0];
 }
+
+/**
+ * https://stackoverflow.com/a/2450976
+ * @param array The array to be shuffled
+ */
+export function shuffle(array: any[]) {
+  let currentIndex = array.length;
+
+  // While there remain elements to shuffle...
+  while (currentIndex != 0) {
+    // Pick a remaining element...
+    let randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex],
+      array[currentIndex],
+    ];
+  }
+
+  return array;
+}

@@ -1,5 +1,6 @@
+import { SmashState } from "./Character";
 import { DisplayManager } from "./DisplayManager";
-import type { ListType, Role } from "./api_connector";
+import { type ListType, type Role } from "./api_connector";
 import "./style.css";
 
 // prevent accidental leaving of page
@@ -39,7 +40,7 @@ window.onload = () => {
     if (props.planning) lists.push("PLANNING");
     if (props.repeating) lists.push("REPEATING");
     if (props.custom) lists.push("CUSTOM");
-    DEV: console.log("Lists requested:", lists);
+    DEBUG: console.log("Lists requested:", lists);
 
     const dm = new DisplayManager(props.username as string, {
       role,
@@ -52,14 +53,15 @@ window.onload = () => {
     configForm.classList.add("hide");
 
     (window as any).showShareMenu = () => {
-      const smashAvgAge = dm.getAverageAge("smash");
-      const passAvgAge = dm.getAverageAge("pass");
+      const smashAvgAge = dm.getAverageAge(SmashState.SMASHED);
+      const passAvgAge = dm.getAverageAge(SmashState.PASSED);
       //const totalAvgAge = (smashAvgAge + passAvgAge) / 2; not used yet
 
       const smashAmount = document.querySelector(
         "#statSmashAmount"
       ) as HTMLParagraphElement;
-      smashAmount.innerText = dm.getAmount("smash").toString() || "0";
+      smashAmount.innerText =
+        dm.getAmount(SmashState.SMASHED).toString() || "0";
 
       const smashAge = document.querySelector(
         "#statSmashAge"
@@ -69,7 +71,7 @@ window.onload = () => {
       const passAmount = document.querySelector(
         "#statPassAmount"
       ) as HTMLParagraphElement;
-      passAmount.innerText = dm.getAmount("pass").toString() || "0";
+      passAmount.innerText = dm.getAmount(SmashState.PASSED).toString() || "0";
 
       const passAge = document.querySelector(
         "#statPassAge"
@@ -85,14 +87,4 @@ window.onload = () => {
       window.location.href = url;
     };
   };
-};
-
-(window as any).showSmashHistory = () => {
-  const element = document.querySelector("#smashHistoryContainer");
-  element?.classList.toggle("hide");
-};
-
-(window as any).showPassHistory = () => {
-  const element = document.querySelector("#passHistoryContainer");
-  element?.classList.toggle("hide");
 };

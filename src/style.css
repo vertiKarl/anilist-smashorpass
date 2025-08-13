@@ -11,6 +11,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 a {
@@ -88,9 +89,33 @@ img {
 .interactions {
   width: 100%;
   display: flex;
+  align-items: center;
   justify-content: space-between;
   padding: 0 2rem;
+  gap: 8px;
   box-sizing: border-box;
+}
+
+.navigation {
+  border-radius: 50%;
+  height: 40px;
+  width: 40px;
+  font-weight: 900;
+  font-size: 20px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  box-sizing: border-box;
+  overflow: hidden;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.navigation:disabled {
+  background-color: #242424;
+  border: none;
+  cursor: auto;
 }
 
 .interaction {
@@ -290,6 +315,81 @@ button:disabled {
 
 .character-card.flipped > img {
   filter: blur(0.2rem);
+}
+
+.character-card.passed {
+  box-shadow: 0px 0px 2px 5px red;
+}
+
+.character-card.smashed {
+  box-shadow: 0px 0px 2px 5px green;
+}
+
+.character-card.swipe-smash {
+  transform: rotateZ(-90deg) translateY(-200%);
+  transition: transform 0.6s ease;
+}
+
+.character-card.swipe-pass {
+  transform: rotateZ(90deg) translateY(-200%);
+  transition: transform 0.6s ease;
+}
+
+#app::after {
+  content: "";
+  opacity: 0;
+  animation: fadeOut 0.3s ease;
+  will-change: opacity;
+}
+
+#app.smash-border::after {
+  content: "";
+  position: fixed; /* stays in place even when scrolling */
+  top: 0;
+  left: 0;
+  width: 20px; /* thickness of the glow area */
+  height: 100%;
+  pointer-events: none; /* so it doesn't block clicks */
+
+  background: linear-gradient(to right, green, transparent);
+  box-shadow: 0 0 -20px green; /* glowing effect */
+  opacity: 0;
+  animation: fadeIn 0.6s ease;
+}
+
+#app.pass-border::after {
+  content: "";
+  position: fixed; /* stays in place even when scrolling */
+  top: 0;
+  right: 0;
+  width: 20px; /* thickness of the glow area */
+  height: 100%;
+  pointer-events: none; /* so it doesn't block clicks */
+
+  background: linear-gradient(to left, red, transparent);
+  box-shadow: 0 0 -20px red; /* glowing effect */
+  opacity: 0;
+  animation: fadeIn 0.6s ease;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 .character-info {
